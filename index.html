@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Informa – Discovery Call Scorecard</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #fff; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+
+    const PIN = "informa2026";
+
+    const FontLink = () => (
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@400;500;600&display=swap');
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: #fff; font-family: 'DM Sans', sans-serif; color: #222; }
+        h1,h2,h3 { font-family: 'Playfair Display', serif; }
+        input, select { font-family: 'DM Sans', sans-serif; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #f5f5f5; }
+        ::-webkit-scrollbar-thumb { background: #E8627C; border-radius: 3px; }
+        @keyframes fadeIn { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+        @keyframes gaugeAnim { from { stroke-dashoffset: 565; } }
+        .fade-in { animation: fadeIn 0.5s ease forwards; }
+        .card-option { transition: all 0.18s ease; cursor: pointer; }
+        .card-option:hover { border-color: #E8627C !important; background: #fff5f7 !important; }
+        .card-option.selected { border-color: #E8627C !important; background: #fff0f3 !important; }
+        .score-circle { animation: gaugeAnim 1.2s ease-out; }
+        .badge-hot { background: linear-gradient(135deg,#22c55e,#16a34a); }
+        .badge-warm { background: linear-gradient(135deg,#f59e0b,#d97706); }
+        .badge-cold { background: linear-gradient(135deg,#ef4444,#dc2626); }
+        .btn-primary { background:#E8627C; color:#fff; border:none; border-radius:30px; padding:14px 32px; font-family:'DM Sans',sans-serif; font-weight:600; font-size:15px; cursor:pointer; transition:all 0.2s; }
+        .btn-primary:hover { background:#d44f69; transform:translateY(-1px); box-shadow:0 4px 16px rgba(232,98,124,0.3); }
+        .btn-secondary { background:#fff; color:#444; border:1.5px solid #ddd; border-radius:30px; padding:13px 28px; font-family:'DM Sans',sans-serif; font-weight:500; font-size:15px; cursor:pointer; transition:all 0.2s; }
+        .btn-secondary:hover { border-color:#E8627C; color:#E8627C; transform:translateY(-1px); }
+        .progress-bar { transition: width 0.4s ease; }
+        @media (max-width: 640px) {
+          .card-grid { grid-template-columns: 1fr !important; }
+          .info-grid { grid-template-columns: 1fr !important; }
+          .btn-row { flex-direction: column !important; }
+        }
+      `}</style>
+    );
+
+    const Bubbles = () => (
+      <div style={{ position:"fixed", inset:0, pointerEvents:"none", overflow:"hidden", zIndex:0 }}>
+        {[
+          { w:420, h:420, top:"-120px", left:"-100px", op:0.045 },
+          { w:300, h:300, top:"30%", right:"-80px", op:0.04 },
+          { w:200, h:200, bottom:"15%", left:"5%", op:0.035 },
+          { w:500, h:500, bottom:"-200px", right:"-150px", op:0.03 },
+          { w:150, h:150, top:"55%", left:"40%", op:0.025 },
+        ].map((b,i) => (
+          <div key={i} style={{
+            position:"absolute", borderRadius:"50%",
+            width:b.w, height:b.h,
+            top:b.top||"auto", left:b.left||"auto",
+            right:b.right||"auto", bottom:b.bottom||"auto",
+            background:`rgba(232,98,124,${b.op})`,
+          }} />
+        ))}
+      </div>
+    );
+
+    const PinScreen = ({ onUnlock }) => {
+      const [pin, setPin] = useState("");
+      const [err, setErr] = useState(false);
+      const [shake, setShake] = useState(false);
+      const submit = () => {
+        if (pin === PIN) { onUnlock(); }
+        else {
+          setErr(true); setShake(true);
+          setTimeout(() => setShake(false), 500);
+          setPin("");
+        }
+      };
+      return (
+        <div style={{ minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center", background:"#fff", position:"relative" }}>
+          <Bubbles />
+          <div className="fade-in" style={{
+            position:"relative", zIndex:1, background:"#fff",
+            borderRadius:24, boxShadow:"0 8px 40px rgba(0,0,0,0.08)",
+            padding:"48px 40px", width:"100%", maxWidth:380, textAlign:"center"
+          }}>
+            <div style={{ fontFamily:"'Playfair Display',serif", fontSize:32, fontWeight:900, color:"#E8627C", marginBottom:6 }}>Informa</div>
+            <div style={{ color:"#888", fontSize:14, marginBottom:32 }}>Discovery Call Scorecard</div>
+            <h2 style={{ fontSize:20, marginBottom:24, color:"#222" }}>Ange PIN-kod</h2>
+            <input
+              type="password"
+              value={pin}
+              onChange={e => { setPin(e.target.value); setErr(false); }}
+              onKeyDown={e => e.key === "Enter" && submit()}
+              placeholder="••••••••••"
+              maxLength={20}
+              style={{
+                width:"100%", padding:"14px 20px", borderRadius:14,
+                border: err ? "2px solid #ef4444" : "1.5px solid #e5e7eb",
+                fontSize:18, textAlign:"center", outline:"none",
+                letterSpacing:4, marginBottom:12,
+                fontFamily:"'DM Sans',sans-serif",
+              }}
+            />
+            {err && <div style={{ color:"#ef4444", fontSize:13, marginBottom:10 }}>Fel PIN-kod. Försök igen.</div>}
+            <button className="btn-primary" style={{ width:"100%", marginTop:4 }} onClick={submit}>Lås upp</button>
+          </div>
+        </div>
+      );
+    };
+
+    const INDUSTRIES = ["IT/SaaS","Industri","Bygg","Rekrytering","Finans","Hälsa/Pharma","Media","Konsult","E-handel","Annan"];
+    const SIZES = ["1-10 anställda","11-50","51-200","201-500","500+"];
+    const SELLERS = ["David","Gustav","Lars","Kent","Sofia","Stefan","Eva-Kajsa","Tobias","Annan"];
+
+    const QUESTIONS = [
+      {
+        id:"budget", section:"B", label:"Budget", max:25,
+        question:'Har kunden en budget för extern mötesbokning/annonsförsäljning?',
+        options:[
+          { text:"Ja, dedikerad budget finns", pts:25, desc:"Budget är avsatt och klar" },
+          { text:"Budget finns men inte öronmärkt", pts:15, desc:"Pengar finns men behöver omfördelas" },
+          { text:"Behöver ta internt först", pts:10, desc:"Beslutet ej tagit, intern diskussion krävs" },
+          { text:"Ingen budget / oklart", pts:0, desc:"Ingen ekonomisk förutsättning just nu" },
+        ]
+      },
+      {
+        id:"authority", section:"A", label:"Authority", max:25,
+        question:"Vem satt vi i möte med?",
+        options:[
+          { text:"Beslutsfattare med mandat", pts:25, desc:"VD, säljchef, marknadschef – kan säga ja" },
+          { text:"Påverkare som kan driva internt", pts:15, desc:"Stark röst men inte slutgiltig beslutare" },
+          { text:"Utredare/researcher utan mandat", pts:5, desc:"Samlar info, beslutet fattas av annan" },
+          { text:"Oklart / fel person", pts:0, desc:"Oklar roll, svårt att komma vidare" },
+        ]
+      },
+      {
+        id:"need", section:"N", label:"Need", max:25,
+        question:"Hur stort är kundens behov?",
+        options:[
+          { text:"Akut – konkret problem som ska lösas nu", pts:25, desc:"Tydlig smärta, hög prioritet internt" },
+          { text:"Tydligt behov men inte bråttom", pts:15, desc:"Erkänner behovet men inget brinner" },
+          { text:"Intresserade men inget uttalat behov", pts:8, desc:"Nyfikna men inga konkreta problem" },
+          { text:"Inget behov identifierat", pts:0, desc:"Svårt att se varför de ens bokade mötet" },
+        ]
+      },
+      {
+        id:"timeline", section:"T", label:"Timeline", max:25,
+        question:"När vill kunden komma igång?",
+        options:[
+          { text:"Inom 1 månad", pts:25, desc:"Hög urgency – redo att starta omgående" },
+          { text:"Inom 1–3 månader", pts:18, desc:"Tydlig ambition med rimlig tidsplan" },
+          { text:"Inom 3–6 månader", pts:10, desc:"Intresserade men ingen brådska" },
+          { text:'Inget tidsperspektiv / "kanske nästa år"', pts:3, desc:"Vag timeline, låg prioritet" },
+        ]
+      },
+      {
+        id:"experience", section:"+", label:"Erfarenhet", max:10,
+        question:"Har kunden testat extern mötesbokning/annonsförsäljning förut?",
+        options:[
+          { text:"Ja och var nöjda – vill ha mer", pts:10, desc:"Positiv erfarenhet, öppen för nytt samarbete" },
+          { text:"Ja men missnöjda med förra leverantören", pts:8, desc:"Vet värdet, vill ha bättre leverantör" },
+          { text:"Nej, första gången", pts:5, desc:"Inga förutfattade meningar, blank sida" },
+          { text:"Ja och vill aldrig göra det igen", pts:0, desc:"Starkt motstånd baserat på dålig erfarenhet" },
+        ]
+      },
+      {
+        id:"chemistry", section:"+", label:"Kemi", max:10,
+        question:"Hur var kemin i mötet?",
+        options:[
+          { text:"Utmärkt – engagerade, ställde frågor", pts:10, desc:"Naturlig dialog, högt engagemang" },
+          { text:"Bra – professionellt och intresserat", pts:7, desc:"Positiv stämning, konstruktivt" },
+          { text:"Okej – artigt men passivt", pts:3, desc:"Svarade men initierade inget själva" },
+          { text:"Dålig – ointresserade eller negativa", pts:0, desc:"Svårt att skapa kontakt" },
+        ]
+      },
+    ];
+
+    const MAX_SCORE = 120;
+
+    function getToday() { return new Date().toISOString().split("T")[0]; }
+
+    function calcScore(answers) {
+      return Object.entries(answers).reduce((sum, [id, optIdx]) => {
+        const q = QUESTIONS.find(q => q.id === id);
+        if (!q || optIdx === null) return sum;
+        return sum + q.options[optIdx].pts;
+      }, 0);
+    }
+
+    function getRating(score) {
+      if (score >= 80) return "hot";
+      if (score >= 50) return "warm";
+      return "cold";
+    }
+
+    function getWeakestBANT(answers) {
+      const bant = ["budget","authority","need","timeline"];
+      let weakest = null, weakestPct = 999;
+      for (const id of bant) {
+        const q = QUESTIONS.find(q => q.id === id);
+        const optIdx = answers[id];
+        if (optIdx === null) continue;
+        const pct = q.options[optIdx].pts / q.max;
+        if (pct < weakestPct) { weakestPct = pct; weakest = id; }
+      }
+      return weakest;
+    }
+
+    function getStrongestBANT(answers) {
+      const bant = ["budget","authority","need","timeline"];
+      let strongest = null, strongestPct = -1;
+      for (const id of bant) {
+        const q = QUESTIONS.find(q => q.id === id);
+        const optIdx = answers[id];
+        if (optIdx === null) continue;
+        const pct = q.options[optIdx].pts / q.max;
+        if (pct > strongestPct) { strongestPct = pct; strongest = id; }
+      }
+      return strongest;
+    }
+
+    const RECS = {
+      hot: "Skicka offert inom 48 timmar. Boka uppföljningsmöte direkt. Lägg in som prioriterad i HubSpot pipeline.",
+      warm: {
+        budget: "Bygg ROI-case. Skicka ROI-kalkylatorn. Visa konkreta resultat från liknande kunder.",
+        authority: "Be om intro till beslutsfattare. Föreslå ett kort möte med chef + nuvarande kontakt.",
+        need: "Skicka relevant case study. Boka ett nytt möte om 2–3 veckor med mer info om deras utmaningar.",
+        timeline: "Lägg i nurture-flöde. Följ upp om 1–2 månader. Skicka värdefullt content under tiden.",
+      },
+      cold: "Lägg i långsiktig nurture-lista. Fokusera er tid på varmare deals. Följ upp om 6 månader med ny vinkling.",
+    };
+
+    const AREA_LABELS = { budget:"Budget", authority:"Beslutsfattare", need:"Behov", timeline:"Tidslinje" };
+    const AREA_STRONG = {
+      budget:"stark budget – dedikerade resurser finns",
+      authority:"stark beslutsfattare – direkt mandat",
+      need:"starkt behov – akut problem identifierat",
+      timeline:"tydlig tidslinje – redo att starta",
+    };
+    const AREA_WEAK = {
+      budget:"svag budget – ingen budget avsatt",
+      authority:"svag authority – fel person i mötet",
+      need:"svagt behov – inget tydligt problem",
+      timeline:"svag tidslinje – inget tidsperspektiv",
+    };
+
+    const Gauge = ({ score, pct, rating }) => {
+      const r = 80, cx = 100, cy = 100;
+      const circ = 2 * Math.PI * r;
+      const dash = (pct / 100) * circ;
+      const colors = { hot:"#22c55e", warm:"#f59e0b", cold:"#ef4444" };
+      const color = colors[rating] || "#E8627C";
+      return (
+        <svg width="200" height="200" viewBox="0 0 200 200">
+          <circle cx={cx} cy={cy} r={r} fill="none" stroke="#f0f0f0" strokeWidth={14} />
+          <circle
+            className="score-circle"
+            cx={cx} cy={cy} r={r}
+            fill="none" stroke={color} strokeWidth={14} strokeLinecap="round"
+            strokeDasharray={`${dash} ${circ - dash}`}
+            strokeDashoffset={circ * 0.25}
+            transform="rotate(-90,100,100)"
+            style={{ transition:"stroke-dasharray 0.8s ease" }}
+          />
+          <text x={cx} y={cy - 8} textAnchor="middle" fontSize="32" fontWeight="700"
+            fontFamily="'Playfair Display',serif" fill={color}>{score}</text>
+          <text x={cx} y={cy + 18} textAnchor="middle" fontSize="13"
+            fontFamily="'DM Sans',sans-serif" fill="#888">av 120</text>
+          <text x={cx} y={cy + 38} textAnchor="middle" fontSize="14"
+            fontFamily="'DM Sans',sans-serif" fill="#aaa">{Math.round(pct)}%</text>
+        </svg>
+      );
+    };
+
+    function App() {
+      const [unlocked, setUnlocked] = useState(false);
+      const [info, setInfo] = useState({ company:"", contact:"", title:"", industry:"", size:"", date:getToday(), seller:"" });
+      const [answers, setAnswers] = useState({ budget:null, authority:null, need:null, timeline:null, experience:null, chemistry:null });
+      const [copied, setCopied] = useState(false);
+      const resultRef = useRef(null);
+
+      const score = calcScore(answers);
+      const pct = (score / MAX_SCORE) * 100;
+      const rating = getRating(score);
+      const answeredAll = Object.values(answers).every(v => v !== null);
+      const weakest = getWeakestBANT(answers);
+      const strongest = getStrongestBANT(answers);
+
+      useEffect(() => {
+        if (answeredAll && resultRef.current) {
+          setTimeout(() => resultRef.current.scrollIntoView({ behavior:"smooth", block:"start" }), 100);
+        }
+      }, [answeredAll]);
+
+      const rec = rating === "hot" ? RECS.hot
+        : rating === "cold" ? RECS.cold
+        : RECS.warm[weakest] || "Fortsätt bearbeta kunden med relevant innehåll och boka uppföljning.";
+
+      const handleCopy = () => {
+        const lines = [
+          "DISCOVERY CALL SCORECARD",
+          `Datum: ${info.date}`,
+          `Företag: ${info.company || "–"}`,
+          `Kontakt: ${info.contact || "–"}, ${info.title || "–"}`,
+          `Bransch: ${info.industry || "–"} | Storlek: ${info.size || "–"}`,
+          `Säljare: ${info.seller || "–"}`,
+          "",
+          `SCORE: ${score}/120 (${Math.round(pct)}%) – ${rating === "hot" ? "HOT" : rating === "warm" ? "VARM" : "KALL"}`,
+          "",
+        ];
+        for (const q of QUESTIONS) {
+          const optIdx = answers[q.id];
+          const optText = optIdx !== null ? q.options[optIdx].text : "–";
+          const pts = optIdx !== null ? q.options[optIdx].pts : 0;
+          lines.push(`${q.label}: ${pts}/${q.max} – ${optText}`);
+        }
+        lines.push("", "REKOMMENDERAT NÄSTA STEG:", rec, "");
+        navigator.clipboard.writeText(lines.join("\n")).then(() => {
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2500);
+        });
+      };
+
+      const handleReset = () => {
+        setInfo({ company:"", contact:"", title:"", industry:"", size:"", date:getToday(), seller:"" });
+        setAnswers({ budget:null, authority:null, need:null, timeline:null, experience:null, chemistry:null });
+      };
+
+      if (!unlocked) return (
+        <>
+          <FontLink />
+          <PinScreen onUnlock={() => setUnlocked(true)} />
+        </>
+      );
+
+      const sectionStyle = {
+        background:"#fff", borderRadius:20,
+        boxShadow:"0 4px 24px rgba(0,0,0,0.06)",
+        padding:"36px 36px", marginBottom:28,
+        position:"relative", zIndex:1,
+      };
+
+      const inputStyle = {
+        width:"100%", padding:"12px 16px",
+        borderRadius:12, border:"1.5px solid #e5e7eb",
+        fontSize:15, outline:"none", background:"#fafafa",
+        fontFamily:"'DM Sans',sans-serif", color:"#222",
+        transition:"border-color 0.2s",
+      };
+
+      return (
+        <>
+          <FontLink />
+          <Bubbles />
+          <div style={{ position:"relative", zIndex:1, maxWidth:760, margin:"0 auto", padding:"28px 20px 60px" }}>
+
+            <div style={{ textAlign:"center", marginBottom:36 }}>
+              <div style={{ fontFamily:"'Playfair Display',serif", fontSize:38, fontWeight:900, color:"#E8627C", letterSpacing:"-0.5px" }}>Informa</div>
+              <div style={{ fontFamily:"'DM Sans',sans-serif", fontSize:16, color:"#888", marginTop:4 }}>Discovery Call Scorecard</div>
+            </div>
+
+            {/* Kundinformation */}
+            <div style={sectionStyle} className="fade-in">
+              <h2 style={{ fontSize:22, marginBottom:24, color:"#111" }}>Kundinformation</h2>
+              <div className="info-grid" style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
+                {[
+                  { key:"company", label:"Företagsnamn *", type:"text", placeholder:"Acme AB" },
+                  { key:"contact", label:"Kontaktperson", type:"text", placeholder:"Anna Andersson" },
+                  { key:"title", label:"Titel / Roll", type:"text", placeholder:"Försäljningschef" },
+                  { key:"date", label:"Datum för mötet", type:"date" },
+                ].map(f => (
+                  <div key={f.key}>
+                    <label style={{ display:"block", fontSize:13, color:"#666", marginBottom:6, fontWeight:500 }}>{f.label}</label>
+                    <input
+                      type={f.type} value={info[f.key]} placeholder={f.placeholder}
+                      onChange={e => setInfo(p => ({ ...p, [f.key]: e.target.value }))}
+                      style={inputStyle}
+                      onFocus={e => e.target.style.borderColor="#E8627C"}
+                      onBlur={e => e.target.style.borderColor="#e5e7eb"}
+                    />
+                  </div>
+                ))}
+                {[
+                  { key:"industry", label:"Bransch", opts:INDUSTRIES },
+                  { key:"size", label:"Företagsstorlek", opts:SIZES },
+                  { key:"seller", label:"Säljare", opts:SELLERS },
+                ].map(f => (
+                  <div key={f.key}>
+                    <label style={{ display:"block", fontSize:13, color:"#666", marginBottom:6, fontWeight:500 }}>{f.label}</label>
+                    <select
+                      value={info[f.key]}
+                      onChange={e => setInfo(p => ({ ...p, [f.key]: e.target.value }))}
+                      style={{ ...inputStyle, appearance:"none", cursor:"pointer" }}
+                      onFocus={e => e.target.style.borderColor="#E8627C"}
+                      onBlur={e => e.target.style.borderColor="#e5e7eb"}
+                    >
+                      <option value="">Välj...</option>
+                      {f.opts.map(o => <option key={o} value={o}>{o}</option>)}
+                    </select>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* BANT+ Scorecard */}
+            <div style={sectionStyle} className="fade-in">
+              <h2 style={{ fontSize:22, marginBottom:8, color:"#111" }}>BANT+ Scorecard</h2>
+              <p style={{ fontSize:14, color:"#999", marginBottom:28 }}>Klicka på det alternativ som bäst beskriver kunden. Poäng uppdateras automatiskt.</p>
+              {QUESTIONS.map(q => {
+                const isBonus = q.section === "+";
+                const optIdx = answers[q.id];
+                const pts = optIdx !== null ? q.options[optIdx].pts : 0;
+                const fillPct = (pts / q.max) * 100;
+                return (
+                  <div key={q.id} style={{ marginBottom:36 }}>
+                    <div style={{ display:"flex", alignItems:"center", gap:14, marginBottom:16 }}>
+                      <div style={{
+                        width:44, height:44, borderRadius:"50%",
+                        background: isBonus ? "#f3f0ff" : "#fff0f3",
+                        display:"flex", alignItems:"center", justifyContent:"center",
+                        fontFamily:"'Playfair Display',serif", fontWeight:900, fontSize:20,
+                        color: isBonus ? "#7c6ee8" : "#E8627C", flexShrink:0,
+                      }}>{q.section}</div>
+                      <div style={{ flex:1 }}>
+                        <div style={{ fontSize:11, fontWeight:600, textTransform:"uppercase", letterSpacing:1, color:"#aaa", marginBottom:2 }}>
+                          {isBonus ? "BONUS" : "BANT"} – {q.label} ({q.max} poäng)
+                        </div>
+                        <div style={{ fontSize:16, fontWeight:600, color:"#222" }}>{q.question}</div>
+                      </div>
+                      <div style={{ minWidth:52, textAlign:"center", fontFamily:"'Playfair Display',serif", fontWeight:700, fontSize:20, color: isBonus ? "#7c6ee8" : "#E8627C" }}>
+                        {pts}<span style={{ fontSize:13, color:"#bbb" }}>/{q.max}</span>
+                      </div>
+                    </div>
+                    <div style={{ height:5, background:"#f0f0f0", borderRadius:10, marginBottom:16, overflow:"hidden" }}>
+                      <div className="progress-bar" style={{ height:"100%", borderRadius:10, width:`${fillPct}%`, background: isBonus ? "#7c6ee8" : "#E8627C" }} />
+                    </div>
+                    <div className="card-grid" style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+                      {q.options.map((opt, oi) => (
+                        <div
+                          key={oi}
+                          className={`card-option${optIdx === oi ? " selected" : ""}`}
+                          onClick={() => setAnswers(p => ({ ...p, [q.id]: oi }))}
+                          style={{
+                            border:`1.5px solid ${optIdx === oi ? "#E8627C" : "#e5e7eb"}`,
+                            borderRadius:14, padding:"14px 16px",
+                            background: optIdx === oi ? "#fff0f3" : "#fafafa",
+                            position:"relative",
+                          }}
+                        >
+                          <div style={{ display:"flex", alignItems:"flex-start", gap:10 }}>
+                            <div style={{
+                              width:18, height:18, borderRadius:"50%", flexShrink:0, marginTop:2,
+                              border:`2px solid ${optIdx === oi ? "#E8627C" : "#d1d5db"}`,
+                              background: optIdx === oi ? "#E8627C" : "transparent",
+                              display:"flex", alignItems:"center", justifyContent:"center",
+                            }}>
+                              {optIdx === oi && <div style={{ width:7, height:7, borderRadius:"50%", background:"#fff" }} />}
+                            </div>
+                            <div style={{ flex:1 }}>
+                              <div style={{ fontSize:14, fontWeight:600, color: optIdx === oi ? "#c0344e" : "#333", lineHeight:1.4 }}>{opt.text}</div>
+                              <div style={{ fontSize:12, color:"#999", marginTop:3 }}>{opt.desc}</div>
+                            </div>
+                          </div>
+                          <div style={{ position:"absolute", top:10, right:12, fontSize:11, fontWeight:700, color: optIdx === oi ? "#E8627C" : "#bbb" }}>{opt.pts}p</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Resultat */}
+            <div ref={resultRef} style={{ ...sectionStyle, background: answeredAll ? "#fff" : "#fafafa" }} className="fade-in">
+              <h2 style={{ fontSize:22, marginBottom:6, color:"#111" }}>Resultat & Rekommendation</h2>
+              <p style={{ fontSize:13, color:"#aaa", marginBottom:28 }}>Uppdateras live medan du fyller i scorecardet ovan</p>
+              <div style={{ display:"flex", flexDirection:"column", alignItems:"center", marginBottom:32 }}>
+                <Gauge score={score} pct={pct} rating={rating} />
+                <div className={`badge-${rating}`} style={{
+                  marginTop:16, padding:"10px 28px", borderRadius:30,
+                  color:"#fff", fontWeight:700, fontSize:16,
+                  letterSpacing:"0.3px", fontFamily:"'DM Sans',sans-serif",
+                  boxShadow:"0 4px 16px rgba(0,0,0,0.15)",
+                }}>
+                  {rating === "hot" ? "🟢 HOT DEAL" : rating === "warm" ? "🟡 VARM DEAL" : "🔴 KALL DEAL"}
+                </div>
+                <div style={{ marginTop:10, fontSize:15, color:"#555", fontWeight:500, textAlign:"center" }}>
+                  {rating === "hot" ? "Hot deal – prioritera denna kund!" : rating === "warm" ? "Varm deal – potential men behöver bearbetning" : "Kall deal – lägg inte mer tid just nu"}
+                </div>
+              </div>
+
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:28 }} className="card-grid">
+                {QUESTIONS.slice(0,4).map(q => {
+                  const optIdx = answers[q.id];
+                  const pts = optIdx !== null ? q.options[optIdx].pts : 0;
+                  const fp = (pts / q.max) * 100;
+                  return (
+                    <div key={q.id} style={{ background:"#f9f9f9", borderRadius:12, padding:"14px 16px" }}>
+                      <div style={{ display:"flex", justifyContent:"space-between", marginBottom:8 }}>
+                        <span style={{ fontSize:13, fontWeight:600, color:"#444" }}>{q.label}</span>
+                        <span style={{ fontSize:13, fontWeight:700, color:"#E8627C" }}>{pts}/{q.max}</span>
+                      </div>
+                      <div style={{ height:6, background:"#e5e7eb", borderRadius:10, overflow:"hidden" }}>
+                        <div style={{ height:"100%", borderRadius:10, width:`${fp}%`, background: fp >= 80 ? "#22c55e" : fp >= 50 ? "#f59e0b" : "#ef4444", transition:"width 0.5s ease" }} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div style={{ background:"#fff5f7", borderRadius:14, padding:"20px 22px", border:"1px solid #ffd6df", marginBottom:24 }}>
+                <div style={{ fontSize:12, fontWeight:700, textTransform:"uppercase", letterSpacing:1, color:"#E8627C", marginBottom:8 }}>Rekommenderat nästa steg</div>
+                <p style={{ fontSize:15, color:"#333", lineHeight:1.6 }}>{rec}</p>
+              </div>
+
+              {answeredAll && strongest && weakest && (
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:8 }} className="card-grid">
+                  <div style={{ background:"#f0fdf4", borderRadius:12, padding:"14px 16px", border:"1px solid #bbf7d0" }}>
+                    <div style={{ fontSize:11, fontWeight:700, textTransform:"uppercase", letterSpacing:1, color:"#16a34a", marginBottom:4 }}>Starkaste område</div>
+                    <div style={{ fontSize:14, color:"#166534", fontWeight:500 }}>{AREA_LABELS[strongest]}: {AREA_STRONG[strongest]}</div>
+                  </div>
+                  <div style={{ background:"#fff7ed", borderRadius:12, padding:"14px 16px", border:"1px solid #fed7aa" }}>
+                    <div style={{ fontSize:11, fontWeight:700, textTransform:"uppercase", letterSpacing:1, color:"#d97706", marginBottom:4 }}>Svagaste område</div>
+                    <div style={{ fontSize:14, color:"#92400e", fontWeight:500 }}>{AREA_LABELS[weakest]}: {AREA_WEAK[weakest]}</div>
+                  </div>
+                </div>
+              )}
+              {answeredAll && weakest && (
+                <div style={{ background:"#f8f8f8", borderRadius:12, padding:"14px 18px", marginTop:12, borderLeft:"3px solid #E8627C" }}>
+                  <p style={{ fontSize:14, color:"#555", fontStyle:"italic" }}>
+                    Fokusera på att <strong>{AREA_LABELS[weakest].toLowerCase()}</strong>-situationen löses för att driva denna deal framåt.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div className="btn-row" style={{ display:"flex", gap:12, justifyContent:"center", flexWrap:"wrap", marginTop:8 }}>
+              <button className="btn-primary" onClick={handleCopy} style={{ minWidth:200 }}>
+                {copied ? "✓ Kopierat!" : "Kopiera till HubSpot"}
+              </button>
+              <button className="btn-secondary" onClick={handleReset}>Nollställ</button>
+            </div>
+          </div>
+        </>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
