@@ -232,7 +232,7 @@
     const RECS = {
       hot: "Skicka offert inom 48 timmar. Boka uppföljningsmöte direkt. Lägg in som prioriterad i HubSpot pipeline.",
       warm: {
-        budget: "Bygg ROI-case. Skicka ROI-kalkylatorn. Visa konkreta resultat från liknande kunder.",
+        budget: "Bygg ROI-case. Använd ROI-kalkylatorn (knapp nedan) för att visa konkreta siffror. Visa resultat från liknande kunder.",
         authority: "Be om intro till beslutsfattare. Föreslå ett kort möte med chef + nuvarande kontakt.",
         need: "Skicka relevant case study. Boka ett nytt möte om 2–3 veckor med mer info om deras utmaningar.",
         timeline: "Lägg i nurture-flöde. Följ upp om 1–2 månader. Skicka värdefullt content under tiden.",
@@ -547,6 +547,17 @@
             <div className="btn-row" style={{ display:"flex", gap:12, justifyContent:"center", flexWrap:"wrap", marginTop:8 }}>
               <button className="btn-primary" onClick={handleCopy} style={{ minWidth:200 }}>
                 {copied ? "✓ Kopierat!" : "Kopiera till HubSpot"}
+              </button>
+              <button className="btn-secondary" onClick={() => {
+                const base = "https://informa-ab.github.io/ROI-kalkylator-/";
+                const p = new URLSearchParams();
+                p.set("tab", "internal");
+                if (info.company) p.set("foretag", info.company);
+                if (info.industry) p.set("branch", info.industry);
+                if (info.seller) p.set("saljare", info.seller);
+                window.open(base + "?" + p.toString(), "_blank");
+              }}>
+                📊 ROI-kalkylator
               </button>
               <button className="btn-secondary" onClick={handleReset}>Nollställ</button>
             </div>
